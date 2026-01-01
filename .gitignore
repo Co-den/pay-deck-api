@@ -5,9 +5,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-config.env
+.env
 .env.local
 .env.production
+config.env
 
 # IDE
 .vscode/
@@ -42,5 +43,3 @@ temp/
 
 # PM2
 .pm2/
-
-.gitignore
