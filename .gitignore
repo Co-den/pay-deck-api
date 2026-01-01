@@ -42,3 +42,5 @@ temp/
 
 # PM2
 .pm2/
+
+.gitignore
