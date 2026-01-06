@@ -13,7 +13,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const transactionRoutes = require("./routes/transaction.routes");
 const webhookRoutes = require("./routes/webhook.routes");
 const apiKeyRoutes = require("./routes/apiKey.routes");
-const paymentMethodRoutes = require("./routes/paymentMethode.routes");
+const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 
 // Import middleware
 const errorHandler = require("./middleware/errorHandler");

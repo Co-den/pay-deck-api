@@ -10,7 +10,7 @@ const {
   testPaymentMethod,
   getPaymentMethodStats,
   initializePaymentMethods,
-} = require("../controllers/paymentMethods.controller");
+} = require("../controllers/paymentMethodController");
 
 router.use(protect);
 
