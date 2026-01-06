@@ -1,21 +1,21 @@
 # PayDeck Payment Gateway Backend - Complete Overview
 
-## 🎯 What You've Got
+## What You've Got
 
 A production-ready payment gateway backend with enterprise-level features including:
 
-- ✅ **Secure Authentication** - JWT + bcrypt password hashing
-- ✅ **Payment Processing** - Full charge, refund, and cancellation flow
-- ✅ **API Key System** - Granular permissions (read/write/refund)
-- ✅ **Real-time Webhooks** - Event notifications with retry logic
-- ✅ **Transaction Analytics** - Dashboard with statistics and trends
-- ✅ **Risk Management** - Fraud detection and risk scoring
-- ✅ **Multi-currency** - Process payments in different currencies
-- ✅ **Export Functionality** - CSV/JSON transaction exports
-- ✅ **Rate Limiting** - Built-in DDoS protection
-- ✅ **Comprehensive Logging** - Morgan for HTTP request logging
+-  **Secure Authentication** - JWT + bcrypt password hashing
+-  **Payment Processing** - Full charge, refund, and cancellation flow
+-  **API Key System** - Granular permissions (read/write/refund)
+-  **Real-time Webhooks** - Event notifications with retry logic
+-  **Transaction Analytics** - Dashboard with statistics and trends
+-  **Risk Management** - Fraud detection and risk scoring
+-  **Multi-currency** - Process payments in different currencies
+-  **Export Functionality** - CSV/JSON transaction exports
+-  **Rate Limiting** - Built-in DDoS protection
+-  **Comprehensive Logging** - Morgan for HTTP request logging
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 paydeck-backend/
@@ -56,7 +56,7 @@ paydeck-backend/
     ├── webhookService.js        # Webhook delivery system
 ```
 
-## 🚀 Quick Start (3 Steps)
+## Quick Start (3 Steps)
 
 ### 1. Install & Configure
 
@@ -91,7 +91,7 @@ npm run dev
 
 Server runs at `http://localhost:5000` ✅
 
-## 🔑 Authentication System
+##  Authentication System
 
 ### Two Authentication Methods:
 
@@ -108,7 +108,7 @@ Server runs at `http://localhost:5000` ✅
 - **JWT**: Merchants log into their dashboard with username/password
 - **API Keys**: Integrations authenticate with secure keys (no passwords exposed)
 
-## 💳 Payment Flow
+##  Payment Flow
 
 ### Complete Payment Lifecycle:
 
@@ -146,7 +146,7 @@ X-API-Key: pk_test_abc123...
 }
 ```
 
-## 📊 Key Features Explained
+##  Key Features Explained
 
 ### 1. Transaction Management
 
@@ -218,7 +218,7 @@ Three permission levels:
 - Expiration dates
 - Easy rotation
 
-## 🗄️ Database Schema
+##  Database Schema
 
 ### Merchants Collection
 
@@ -272,7 +272,7 @@ Three permission levels:
 }
 ```
 
-## 🔒 Security Features
+##  Security Features
 
 ### Built-in Protection:
 
@@ -304,7 +304,7 @@ Three permission levels:
    - Never stored in plain text
    - Prefix-based identification
 
-## 📈 Fee Structure
+##  Fee Structure
 
 Default fees (configurable):
 - **Processing fee**: 2.9% + $0.30 per transaction
@@ -316,7 +316,7 @@ Example for $100 transaction:
 - **Total fees**: $3.70
 - **Merchant receives**: $96.30
 
-## 🧪 Testing
+##  Testing
 
 ### Test Card Numbers:
 
@@ -345,7 +345,7 @@ STRIPE_SECRET_KEY=sk_live_...
 
 Integrates with real payment processor.
 
-## 🔧 Configuration Options
+##  Configuration Options
 
 ### Merchant Tiers:
 
@@ -369,7 +369,7 @@ Integrates with real payment processor.
 - `refund.processed` - Refund completed
 - `settlement.completed` - Funds settled
 
-## 🎨 Customization
+##  Customization
 
 ### Add New Payment Method:
 
@@ -391,7 +391,7 @@ this.fees.processingFee = (this.amount * 0.029) + 0.30;
 this.fees.platformFee = this.amount * 0.005;
 ```
 
-## 📦 Deployment
+##  Deployment
 
 ### Option 1: Traditional Server
 
@@ -433,7 +433,7 @@ docker run -d -p 5000:5000 --env-file .env paydeck-backend
 - **Google Cloud Run**: `gcloud run deploy`
 - **DigitalOcean App Platform**: Connect GitHub repo
 
-## 🎯 Production Checklist
+##  Production Checklist
 
 Before going live:
 
@@ -451,7 +451,7 @@ Before going live:
 - [ ] Configure email notifications
 - [ ] Test refund flow end-to-end
 
-## 📚 API Endpoints Summary
+##  API Endpoints Summary
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
@@ -468,7 +468,7 @@ Before going live:
 | `/api/webhooks` | POST | JWT | Create webhook |
 | `/api/merchant/dashboard` | GET | JWT | Dashboard data |
 
-## 🤝 Integration Examples
+##  Integration Examples
 
 ### Node.js/Express Integration:
 
@@ -535,7 +535,7 @@ app.post('/webhooks/paydeck', (req, res) => {
 });
 ```
 
-## 🐛 Common Issues & Solutions
+##  Common Issues & Solutions
 
 **Issue**: MongoDB connection failed
 ```bash
@@ -556,24 +556,22 @@ curl -X GET http://localhost:5000/api/keys \
   -H "Authorization: Bearer JWT_TOKEN"
 ```
 
-## 📞 Support & Resources
+##  Support & Resources
 
-- 📖 **Full Documentation**: [README.md](./README.md)
-- 🧪 **Testing Guide**: [API_TESTING_GUIDE.md](./API_TESTING_GUIDE.md)
-- 🚀 **Quick Start**: [QUICKSTART.md](./QUICKSTART.md)
-- 🐛 **Report Issues**: GitHub Issues
-- 💬 **Get Help**: support@paydeck.com
+-  **Full Documentation**: [README.md](./README.md)
+-  **Testing Guide**: [API_TESTING_GUIDE.md](./API_TESTING_GUIDE.md)
+-  **Quick Start**: [QUICKSTART.md](./QUICKSTART.md)
+-  **Report Issues**: GitHub Issues
+-  **Get Help**: support@paydeck.com
 
-## 🎉 What's Next?
+##  What's Next?
 
-1. ✅ **Test the API** - Use Postman or curl
-2. ✅ **Build Frontend** - Connect to your UI
-3. ✅ **Set up Webhooks** - Receive real-time notifications
-4. ✅ **Go Production** - Deploy to your server
-5. ✅ **Scale Up** - Add features as needed
+1.  **Test the API** - Use Postman or curl
+2.  **Build Frontend** - Connect to your UI
+3.  **Set up Webhooks** - Receive real-time notifications
+4.  **Go Production** - Deploy to your server
+5.  **Scale Up** - Add features as needed
 
 ---
 
-**Built with ❤️ by the PayDeck Team**
-
-This is a complete, production-ready payment gateway backend. All core features are implemented and ready to use. Customize as needed for your specific requirements!
+**Built with Love by the PayDeck Team**
