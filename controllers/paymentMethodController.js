@@ -204,6 +204,19 @@ exports.testPaymentMethod = async (req, res, next) => {
       case "stripe":
         testResult = await testStripeConnection(paymentMethod.configuration);
         break;
+      case "coinbase commerce":
+        testResult = await testCoinbaseConnection(paymentMethod.configuration);
+        break;
+      case "yellow card":
+        testResult = await testYellowCardConnection(
+          paymentMethod.configuration
+        );
+        break;
+      case "binance pay":
+        testResult = await testBinancePayConnection(
+          paymentMethod.configuration
+        );
+        break;
       default:
         testResult = {
           success: false,
@@ -417,6 +430,142 @@ exports.initializePaymentMethods = async (req, res, next) => {
         features: ["MTN", "Airtel", "Vodafone"],
         displayOrder: 5,
       },
+      {
+        merchant: req.merchant._id,
+        name: "Cryptocurrency (Coinbase Commerce)",
+        type: "crypto",
+        provider: "Coinbase Commerce",
+        description:
+          "Accept Bitcoin, Ethereum, USDC, USDT and other cryptocurrencies",
+        enabled: false,
+        setupComplete: false,
+        configuration: {
+          testMode: true,
+          apiKey: "",
+          webhookSecret: "",
+        },
+        fees: {
+          percentage: 1.0,
+          fixedAmount: 0,
+          cap: 0,
+        },
+        limits: {
+          min: 1000,
+          max: 100000000,
+        },
+        supportedCurrencies: [
+          "BTC",
+          "ETH",
+          "USDC",
+          "USDT",
+          "DAI",
+          "BCH",
+          "LTC",
+          "DOGE",
+        ],
+        supportedCountries: [
+          "NG",
+          "GH",
+          "KE",
+          "ZA",
+          "US",
+          "GB",
+          "CA",
+          "GLOBAL",
+        ],
+        settlementPeriod: "T+0",
+        features: [
+          "Bitcoin",
+          "Ethereum",
+          "USDC",
+          "USDT",
+          "Instant Settlement",
+          "Global",
+        ],
+        displayOrder: 6,
+      },
+      {
+        merchant: req.merchant._id,
+        name: "Cryptocurrency (Yellow Card)",
+        type: "crypto",
+        provider: "Yellow Card",
+        description: "African crypto payment gateway - Bitcoin, USDT, USDC",
+        enabled: false,
+        setupComplete: false,
+        configuration: {
+          testMode: true,
+          apiKey: "",
+          secretKey: "",
+          merchantId: "",
+        },
+        fees: {
+          percentage: 0.8,
+          fixedAmount: 0,
+          cap: 0,
+        },
+        limits: {
+          min: 500,
+          max: 50000000,
+        },
+        supportedCurrencies: ["BTC", "USDT", "USDC", "ETH"],
+        supportedCountries: ["NG", "GH", "KE", "UG", "TZ", "ZA", "ZM", "BW"],
+        settlementPeriod: "T+0",
+        features: [
+          "Bitcoin",
+          "USDT",
+          "USDC",
+          "Instant Settlement",
+          "African Focus",
+          "Auto-convert to NGN",
+        ],
+        displayOrder: 7,
+      },
+      {
+        merchant: req.merchant._id,
+        name: "Cryptocurrency (Binance Pay)",
+        type: "crypto",
+        provider: "Binance Pay",
+        description:
+          "Accept crypto via Binance - Low fees, 300+ cryptocurrencies",
+        enabled: false,
+        setupComplete: false,
+        configuration: {
+          testMode: true,
+          apiKey: "",
+          secretKey: "",
+          merchantId: "",
+        },
+        fees: {
+          percentage: 0,
+          fixedAmount: 0,
+          cap: 0,
+        },
+        limits: {
+          min: 100,
+          max: 1000000000,
+        },
+        supportedCurrencies: [
+          "BTC",
+          "ETH",
+          "USDT",
+          "USDC",
+          "BNB",
+          "BUSD",
+          "DAI",
+          "TRX",
+          "XRP",
+          "ADA",
+        ],
+        supportedCountries: ["GLOBAL"],
+        settlementPeriod: "T+0",
+        features: [
+          "300+ Cryptocurrencies",
+          "Zero Fees",
+          "Instant Settlement",
+          "Binance Ecosystem",
+        ],
+        displayOrder: 8,
+      },
     ];
 
     const paymentMethods = await PaymentMethod.insertMany(defaultMethods);
@@ -502,6 +651,107 @@ async function testStripeConnection(config) {
     return {
       success: false,
       message: "Stripe connection failed: " + error.message,
+    };
+  }
+}
+
+async function testCoinbaseConnection(config) {
+  try {
+    const axios = require("axios");
+    const response = await axios.get(
+      "https://api.commerce.coinbase.com/charges",
+      {
+        headers: {
+          "X-CC-Api-Key": config.apiKey,
+          "X-CC-Version": "2018-03-22",
+        },
+      }
+    );
+
+    return {
+      success: response.status === 200,
+      message: "Coinbase Commerce connection successful",
+      details: {
+        apiVersion: "2018-03-22",
+        status: "connected",
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Coinbase Commerce connection failed: " + error.message,
+    };
+  }
+}
+
+async function testYellowCardConnection(config) {
+  try {
+    const axios = require("axios");
+    // Yellow Card API test endpoint
+    const response = await axios.get(
+      "https://api.yellowcard.io/business/rates",
+      {
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return {
+      success: response.status === 200,
+      message: "Yellow Card connection successful",
+      details: {
+        rates: "available",
+        currencies: "BTC, USDT, USDC, ETH",
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Yellow Card connection failed: " + error.message,
+    };
+  }
+}
+
+async function testBinancePayConnection(config) {
+  try {
+    const axios = require("axios");
+    const crypto = require("crypto");
+    const timestamp = Date.now();
+
+    // Binance Pay requires signature
+    const queryString = `timestamp=${timestamp}`;
+    const signature = crypto
+      .createHmac("sha512", config.secretKey)
+      .update(queryString)
+      .digest("hex");
+
+    const response = await axios.get(
+      "https://bpay.binanceapi.com/binancepay/openapi/v2/order/query",
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "BinancePay-Timestamp": timestamp,
+          "BinancePay-Nonce": Math.random().toString(36).substring(7),
+          "BinancePay-Certificate-SN": config.apiKey,
+          "BinancePay-Signature": signature,
+        },
+      }
+    );
+
+    return {
+      success: response.status === 200,
+      message: "Binance Pay connection successful",
+      details: {
+        status: "connected",
+        merchant: config.merchantId,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Binance Pay connection failed: " + error.message,
     };
   }
 }
