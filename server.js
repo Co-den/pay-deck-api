@@ -85,12 +85,12 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/merchant", merchantRoutes);
-app.use("/api/payments", paymentRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/keys", apiKeyRoutes);
 app.use("/api/payment-methods", paymentMethodRoutes);
 app.use("/api/payment-links", paymentLinkRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // 404 handler
 app.use((req, res) => {
