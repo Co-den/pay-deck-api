@@ -1,285 +1,208 @@
-const Transaction = require('../models/Transaction.model');
-const Merchant = require('../models/Merchant.model');
-const { v4: uuidv4 } = require('uuid');
-const { processPayment, calculateRiskScore } = require('../utils/paymentProcessor');
-const { sendWebhook } = require('../utils/webhookService');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const PaymentLink = require("../models/PaymentLinkModel");
+const Transaction = require("../models/Transaction.model");
 
-// @desc    Create a payment/charge
-// @route   POST /api/payments/charge
-// @access  Private (API Key)
-exports.createPayment = async (req, res, next) => {
+
+exports.createPaymentIntent = async (req, res, next) => {
   try {
     const {
       amount,
-      currency = 'USD',
-      customer,
-      paymentMethod,
-      description,
-      metadata
+      currency,
+      customerData,
+      paymentLinkId,
+      shortCode,
+      metadata,
     } = req.body;
 
-    // Validation
-    if (!amount || amount <= 0) {
+    // Validate required fields
+    if (!amount || !currency || !customerData) {
       return res.status(400).json({
-        status: 'error',
-        message: 'Valid amount is required'
+        status: "error",
+        message: "Amount, currency, and customer data are required",
       });
     }
 
-    if (!customer || !customer.email) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Customer email is required'
-      });
+    // If shortCode provided, get payment link
+    let paymentLink = null;
+    if (shortCode) {
+      paymentLink = await PaymentLink.findOne({ shortCode });
+
+      if (!paymentLink) {
+        return res.status(404).json({
+          status: "error",
+          message: "Payment link not found",
+        });
+      }
+
+      // Validate payment link
+      const validation = paymentLink.isValid();
+      if (!validation.valid) {
+        return res.status(400).json({
+          status: "error",
+          message: validation.reason,
+        });
+      }
     }
 
-    if (!paymentMethod || !paymentMethod.type) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Payment method is required'
-      });
-    }
-
-    // Generate unique transaction ID
-    const transactionId = `txn_${uuidv4().replace(/-/g, '')}`;
-
-    // Calculate risk score
-    const riskScore = calculateRiskScore({
-      amount,
-      customerEmail: customer.email,
-      ipAddress: req.ip
-    });
-
-    // Create transaction
-    const transaction = await Transaction.create({
-      transactionId,
-      merchant: req.merchant._id,
-      customer: {
-        ...customer,
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent']
+    // Create Stripe Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: currency.toLowerCase(),
+      automatic_payment_methods: {
+        enabled: true,
       },
-      amount,
-      currency: currency.toUpperCase(),
-      paymentMethod,
-      description,
-      metadata,
-      riskScore,
-      status: 'processing'
+      metadata: {
+        customerName: customerData.name,
+        customerEmail: customerData.email,
+        customerPhone: customerData.phone || "",
+        paymentLinkId: paymentLinkId || "",
+        shortCode: shortCode || "",
+        ...(metadata || {}),
+      },
+      receipt_email: customerData.email,
+      description: metadata?.title || "Payment via PayDeck",
     });
 
-    // Process payment (mock or real processor)
-    const paymentResult = await processPayment({
-      transaction,
-      paymentMethod,
-      merchant: req.merchant
-    });
-
-    // Update transaction with result
-    transaction.status = paymentResult.success ? 'success' : 'failed';
-    transaction.processedAt = new Date();
-    
-    if (paymentResult.success) {
-      transaction.providerTransactionId = paymentResult.providerTransactionId;
-    } else {
-      transaction.failureReason = {
-        code: paymentResult.errorCode,
-        message: paymentResult.errorMessage
-      };
-    }
-
-    await transaction.save();
-
-    // Update merchant statistics
-    await req.merchant.updateStats(transaction);
-
-    // Send webhook
-    const webhookEvent = paymentResult.success ? 'payment.success' : 'payment.failed';
-    await sendWebhook(req.merchant._id, webhookEvent, transaction);
-
-    // Response
-    res.status(paymentResult.success ? 200 : 400).json({
-      status: paymentResult.success ? 'success' : 'error',
-      message: paymentResult.success ? 'Payment processed successfully' : 'Payment failed',
+    res.status(200).json({
+      status: "success",
       data: {
-        transactionId: transaction.transactionId,
-        status: transaction.status,
-        amount: transaction.amount,
-        currency: transaction.currency,
-        ...(paymentResult.success ? {
-          fees: transaction.fees
-        } : {
-          failureReason: transaction.failureReason
-        })
-      }
+        paymentIntent: {
+          clientSecret: paymentIntent.client_secret,
+          transactionId: paymentIntent.id,
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency.toUpperCase(),
+          publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        },
+      },
     });
   } catch (error) {
+    console.error("Payment Intent creation error:", error);
     next(error);
   }
 };
 
-// @desc    Create a payment link
-// @route   POST /api/payments/links
-// @access  Private
-exports.createPaymentLink = async (req, res, next) => {
+// @desc    Confirm Payment
+// @route   POST /api/payments/confirm
+// @access  Public
+exports.confirmPayment = async (req, res, next) => {
   try {
-    const { amount, currency = 'USD', description, expiresIn = 24 } = req.body;
+    const { paymentIntentId, paymentLinkId, shortCode, customerData } =
+      req.body;
 
-    if (!amount || amount <= 0) {
+    if (!paymentIntentId) {
       return res.status(400).json({
-        status: 'error',
-        message: 'Valid amount is required'
+        status: "error",
+        message: "Payment intent ID is required",
       });
     }
 
-    const linkId = `link_${uuidv4().replace(/-/g, '')}`;
-    const expiresAt = new Date(Date.now() + expiresIn * 60 * 60 * 1000);
+    // Retrieve payment intent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    // In production, store this in a PaymentLink model
-    const paymentLink = {
-      linkId,
-      merchant: req.merchant._id,
-      amount,
-      currency,
-      description,
-      expiresAt,
-      url: `${process.env.FRONTEND_URL}/pay/${linkId}`
-    };
+    if (paymentIntent.status !== "succeeded") {
+      return res.status(400).json({
+        status: "error",
+        message: "Payment not completed",
+        data: {
+          success: false,
+          error: "Payment was not successful",
+        },
+      });
+    }
 
-    res.status(201).json({
-      status: 'success',
-      message: 'Payment link created successfully',
-      data: paymentLink
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+    // Get payment link if shortCode provided
+    let paymentLink = null;
+    if (shortCode) {
+      paymentLink = await PaymentLink.findOne({ shortCode });
 
-// @desc    Get payment/transaction by ID
-// @route   GET /api/payments/:transactionId
-// @access  Private (API Key)
-exports.getPayment = async (req, res, next) => {
-  try {
-    const transaction = await Transaction.findOne({
-      transactionId: req.params.transactionId,
-      merchant: req.merchant._id
-    });
+      if (paymentLink) {
+        // Record payment in payment link stats
+        await paymentLink.recordPayment(paymentIntent.amount / 100, true);
+      }
+    }
 
-    if (!transaction) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found'
+    // Create transaction record
+    if (paymentLink) {
+      await Transaction.create({
+        merchant: paymentLink.merchant,
+        paymentLink: paymentLink._id,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency.toUpperCase(),
+        status: "completed",
+        paymentMethod: "card",
+        provider: "stripe",
+        transactionId: paymentIntent.id,
+        customerEmail: customerData?.email || paymentIntent.receipt_email,
+        customerName: customerData?.name || paymentIntent.metadata.customerName,
+        customerPhone:
+          customerData?.phone || paymentIntent.metadata.customerPhone,
+        metadata: paymentIntent.metadata,
       });
     }
 
     res.status(200).json({
-      status: 'success',
-      data: { transaction }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Refund a payment
-// @route   POST /api/payments/:transactionId/refund
-// @access  Private (API Key with refund permission)
-exports.refundPayment = async (req, res, next) => {
-  try {
-    const { amount, reason } = req.body;
-
-    const transaction = await Transaction.findOne({
-      transactionId: req.params.transactionId,
-      merchant: req.merchant._id
-    });
-
-    if (!transaction) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found'
-      });
-    }
-
-    if (transaction.status !== 'success') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Can only refund successful transactions'
-      });
-    }
-
-    const refundAmount = amount || transaction.amount;
-
-    if (refundAmount > transaction.amount - transaction.refund.refundedAmount) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Refund amount exceeds available amount'
-      });
-    }
-
-    // Process refund
-    await transaction.processRefund(refundAmount, reason);
-
-    // Update merchant statistics
-    req.merchant.statistics.totalRefunds += refundAmount;
-    await req.merchant.save();
-
-    // Send webhook
-    await sendWebhook(req.merchant._id, 'refund.processed', transaction);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Refund processed successfully',
+      status: "success",
+      message: "Payment confirmed successfully",
       data: {
-        transactionId: transaction.transactionId,
-        refundedAmount: refundAmount,
-        status: transaction.status
-      }
+        success: true,
+        transactionId: paymentIntent.id,
+        message: "Payment completed successfully",
+      },
     });
   } catch (error) {
+    console.error("Payment confirmation error:", error);
     next(error);
   }
 };
 
-// @desc    Cancel a pending payment
-// @route   POST /api/payments/:transactionId/cancel
-// @access  Private (API Key)
-exports.cancelPayment = async (req, res, next) => {
+// @desc    Webhook handler for Stripe events
+// @route   POST /api/payments/webhook
+// @access  Public (Stripe webhook)
+exports.handleWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
   try {
-    const transaction = await Transaction.findOne({
-      transactionId: req.params.transactionId,
-      merchant: req.merchant._id
-    });
-
-    if (!transaction) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found'
-      });
-    }
-
-    if (transaction.status !== 'pending' && transaction.status !== 'processing') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Can only cancel pending or processing transactions'
-      });
-    }
-
-    transaction.status = 'cancelled';
-    await transaction.save();
-
-    // Send webhook
-    await sendWebhook(req.merchant._id, 'payment.cancelled', transaction);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Payment cancelled successfully',
-      data: {
-        transactionId: transaction.transactionId,
-        status: transaction.status
-      }
-    });
-  } catch (error) {
-    next(error);
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  // Handle the event
+  switch (event.type) {
+    case "payment_intent.succeeded":
+      const paymentIntent = event.data.object;
+      console.log("PaymentIntent succeeded:", paymentIntent.id);
+
+      // Update transaction status if needed
+      // Record in analytics
+      break;
+
+    case "payment_intent.payment_failed":
+      const failedPayment = event.data.object;
+      console.log("Payment failed:", failedPayment.id);
+
+      // Update payment link stats for failed payment
+      if (failedPayment.metadata.shortCode) {
+        const paymentLink = await PaymentLink.findOne({
+          shortCode: failedPayment.metadata.shortCode,
+        });
+
+        if (paymentLink) {
+          paymentLink.stats.failedPayments += 1;
+          await paymentLink.save();
+        }
+      }
+      break;
+
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({ received: true });
 };
+
+module.exports = exports;
