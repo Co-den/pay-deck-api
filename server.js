@@ -14,6 +14,7 @@ const transactionRoutes = require("./routes/transaction.routes");
 const webhookRoutes = require("./routes/webhook.routes");
 const apiKeyRoutes = require("./routes/apiKey.routes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
+const paymentLinkRoutes = require("./routes/paymentLinkRoute");
 
 // Import middleware
 const errorHandler = require("./middleware/errorHandler");
@@ -89,6 +90,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/keys", apiKeyRoutes);
 app.use("/api/payment-methods", paymentMethodRoutes);
+app.use("/api/payment-links", paymentLinkRoutes);
 
 // 404 handler
 app.use((req, res) => {
