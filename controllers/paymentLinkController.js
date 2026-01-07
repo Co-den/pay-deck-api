@@ -1,4 +1,4 @@
-const PaymentLink = require("../models/PaymentLink.model");
+const PaymentLink = require("../models/PaymentLinkModel");
 const crypto = require("crypto");
 const dotenv = require("dotenv");
 dotenv.config({ path: ".env" });
