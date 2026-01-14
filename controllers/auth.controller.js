@@ -1,4 +1,4 @@
-const Merchant = require("../models/Merchant.model");
+const Merchant = require("../models/MerchantModel");
 const ApiKey = require("../models/ApiKey.model");
 const { validationResult } = require("express-validator");
 

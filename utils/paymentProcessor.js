@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 /**
  * Mock payment processor
@@ -14,7 +14,7 @@ exports.calculateRiskScore = ({ amount, customerEmail, ipAddress }) => {
   else if (amount > 500) score += 10;
 
   // New/disposable email patterns
-  if (customerEmail.includes('temp') || customerEmail.includes('disposable')) {
+  if (customerEmail.includes("temp") || customerEmail.includes("disposable")) {
     score += 30;
   }
 
@@ -27,10 +27,11 @@ exports.calculateRiskScore = ({ amount, customerEmail, ipAddress }) => {
 // Process payment through mock or real processor
 exports.processPayment = async ({ transaction, paymentMethod, merchant }) => {
   // Simulate payment processing delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Check if using test or live mode
-  const isTestMode = merchant.tier === 'starter' || paymentMethod.type === 'test';
+  const isTestMode =
+    merchant.tier === "starter" || paymentMethod.type === "test";
 
   // Mock success/failure logic
   const shouldSucceed = determinePaymentSuccess(transaction, paymentMethod);
@@ -38,18 +39,18 @@ exports.processPayment = async ({ transaction, paymentMethod, merchant }) => {
   if (shouldSucceed) {
     return {
       success: true,
-      providerTransactionId: `prov_${uuidv4().replace(/-/g, '')}`,
+      providerTransactionId: `prov_${uuidv4().replace(/-/g, "")}`,
       processorResponse: {
         authCode: generateAuthCode(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   } else {
     const errorCode = getRandomErrorCode();
     return {
       success: false,
       errorCode,
-      errorMessage: getErrorMessage(errorCode)
+      errorMessage: getErrorMessage(errorCode),
     };
   }
 };
@@ -62,11 +63,11 @@ function determinePaymentSuccess(transaction, paymentMethod) {
   }
 
   // Test card numbers
-  if (paymentMethod.last4 === '0000' || paymentMethod.last4 === '0002') {
+  if (paymentMethod.last4 === "0000" || paymentMethod.last4 === "0002") {
     return false; // Test decline
   }
 
-  if (paymentMethod.last4 === '0001') {
+  if (paymentMethod.last4 === "0001") {
     return true; // Test success
   }
 
@@ -82,13 +83,13 @@ function generateAuthCode() {
 // Get random error code for failed transactions
 function getRandomErrorCode() {
   const errorCodes = [
-    'insufficient_funds',
-    'card_declined',
-    'expired_card',
-    'invalid_cvv',
-    'processing_error',
-    'bank_declined',
-    'fraud_detected'
+    "insufficient_funds",
+    "card_declined",
+    "expired_card",
+    "invalid_cvv",
+    "processing_error",
+    "bank_declined",
+    "fraud_detected",
   ];
   return errorCodes[Math.floor(Math.random() * errorCodes.length)];
 }
@@ -96,27 +97,27 @@ function getRandomErrorCode() {
 // Get error message for error code
 function getErrorMessage(errorCode) {
   const messages = {
-    insufficient_funds: 'Insufficient funds in account',
-    card_declined: 'Card was declined by the issuing bank',
-    expired_card: 'Card has expired',
-    invalid_cvv: 'Invalid CVV/security code',
-    processing_error: 'An error occurred while processing the payment',
-    bank_declined: 'Transaction declined by bank',
-    fraud_detected: 'Transaction flagged as potentially fraudulent'
+    insufficient_funds: "Insufficient funds in account",
+    card_declined: "Card was declined by the issuing bank",
+    expired_card: "Card has expired",
+    invalid_cvv: "Invalid CVV/security code",
+    processing_error: "An error occurred while processing the payment",
+    bank_declined: "Transaction declined by bank",
+    fraud_detected: "Transaction flagged as potentially fraudulent",
   };
-  return messages[errorCode] || 'Payment failed';
+  return messages[errorCode] || "Payment failed";
 }
 
 // Process refund
 exports.processRefund = async ({ transaction, amount }) => {
   // Simulate refund processing
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   return {
     success: true,
-    refundId: `refund_${uuidv4().replace(/-/g, '')}`,
+    refundId: `refund_${uuidv4().replace(/-/g, "")}`,
     amount,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 
@@ -126,19 +127,19 @@ exports.validateCard = (cardDetails) => {
 
   // Basic Luhn algorithm check
   if (!luhnCheck(number)) {
-    return { valid: false, error: 'Invalid card number' };
+    return { valid: false, error: "Invalid card number" };
   }
 
   // Check expiry
   const now = new Date();
   const expiry = new Date(expiryYear, expiryMonth - 1);
   if (expiry < now) {
-    return { valid: false, error: 'Card has expired' };
+    return { valid: false, error: "Card has expired" };
   }
 
   // Check CVV
   if (!/^\d{3,4}$/.test(cvv)) {
-    return { valid: false, error: 'Invalid CVV' };
+    return { valid: false, error: "Invalid CVV" };
   }
 
   return { valid: true };
@@ -146,7 +147,7 @@ exports.validateCard = (cardDetails) => {
 
 // Luhn algorithm for card validation
 function luhnCheck(cardNumber) {
-  const digits = cardNumber.replace(/\D/g, '').split('').map(Number);
+  const digits = cardNumber.replace(/\D/g, "").split("").map(Number);
   let sum = 0;
   let isEven = false;
 
@@ -173,12 +174,96 @@ exports.detectCardBrand = (cardNumber) => {
   const firstTwo = cardNumber.substring(0, 2);
   const firstFour = cardNumber.substring(0, 4);
 
-  if (firstDigit === '4') return 'visa';
-  if (firstTwo >= '51' && firstTwo <= '55') return 'mastercard';
-  if (firstTwo === '34' || firstTwo === '37') return 'amex';
-  if (firstFour === '6011' || firstTwo === '65') return 'discover';
-  
-  return 'unknown';
+  if (firstDigit === "4") return "visa";
+  if (firstTwo >= "51" && firstTwo <= "55") return "mastercard";
+  if (firstTwo === "34" || firstTwo === "37") return "amex";
+  if (firstFour === "6011" || firstTwo === "65") return "discover";
+
+  return "unknown";
 };
+
+exports.verifyBankAccount = async (_accountNumber, _routingNumber) => {
+  // TODO: Integrate with Plaid, Stripe, or other bank verification service
+
+  // Mock verification logic
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Generate mock account name
+      const mockNames = [
+        "John Doe",
+        "Jane Smith",
+        "Tech Store Inc",
+        "Business Account",
+      ];
+
+      const randomName =
+        mockNames[Math.floor(Math.random() * mockNames.length)];
+      resolve(randomName);
+    }, 1000);
+  });
+};
+
+// Mask account number
+exports.maskAccountNumber = (accountNumber) => {
+  if (!accountNumber) return "";
+  const last4 = accountNumber.slice(-4);
+  return `****${last4}`;
+};
+
+// Get features by plan
+exports.getFeaturesByPlan = (planName) => {
+  const features = {
+    free: {
+      transactionLimit: 100,
+      apiAccess: false,
+      advancedAnalytics: false,
+      prioritySupport: false,
+    },
+    starter: {
+      transactionLimit: 1000,
+      apiAccess: true,
+      advancedAnalytics: false,
+      prioritySupport: false,
+    },
+    business: {
+      transactionLimit: 10000,
+      apiAccess: true,
+      advancedAnalytics: true,
+      prioritySupport: false,
+    },
+    enterprise: {
+      transactionLimit: -1, // unlimited
+      apiAccess: true,
+      advancedAnalytics: true,
+      prioritySupport: true,
+    },
+  };
+
+  return features[planName] || features.free;
+};
+
+// Generate invoice number
+exports.generateInvoiceNumber = () => {
+  const prefix = "INV";
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
+  return `${prefix}-${timestamp}-${random}`;
+};
+
+// Process payment (mock - integrate with real payment processor)
+async function processPayment(user, amount, paymentMethodId) {
+  // TODO: Integrate with Stripe, PayPal, crypto payment processor
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        transactionId: `txn_${Date.now()}`,
+      });
+    }, 1000);
+  });
+}
 
 module.exports = exports;

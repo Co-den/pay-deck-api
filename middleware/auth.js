@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const Merchant = require('../models/Merchant.model');
+const Merchant = require('../models/MerchantModel');
 const ApiKey = require('../models/ApiKey.model');
 
 // Protect routes - JWT authentication

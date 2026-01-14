@@ -6,7 +6,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config({ path: ".env" });
 
-// Import routes
+// Routes
 const authRoutes = require("./routes/auth.routes");
 const merchantRoutes = require("./routes/merchant.routes");
 const paymentRoutes = require("./routes/payment.routes");
@@ -15,6 +15,12 @@ const webhookRoutes = require("./routes/webhook.routes");
 const apiKeyRoutes = require("./routes/apiKey.routes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 const paymentLinkRoutes = require("./routes/paymentLinkRoute");
+const accountRoutes = require("./routes/accountRoute");
+const bankRoutes = require("./routes/bankRoute");
+const billingRoutes = require("./routes/billingRoute");
+const businessRoutes = require("./routes/businessRoute");
+const notificationRoute = require("./routes/notificationRoute");
+const securityRoutes = require("./routes/securityRoute");
 
 // Import middleware
 const errorHandler = require("./middleware/errorHandler");
@@ -91,6 +97,16 @@ app.use("/api/keys", apiKeyRoutes);
 app.use("/api/payment-methods", paymentMethodRoutes);
 app.use("/api/payment-links", paymentLinkRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/accounts", accountRoutes);
+app.use("/api/banks", bankRoutes);
+app.use("/api/billing", billingRoutes);
+app.use("/api/business", businessRoutes);
+app.use("/api/notifications", notificationRoute);
+app.use("/api/security", securityRoutes);
+
+
+
+
 
 // 404 handler
 app.use((req, res) => {

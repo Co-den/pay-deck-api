@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Merchant = require('../models/Merchant.model');
+const Merchant = require('../models/MerchantModel');
 const { protect } = require('../middleware/auth');
 
 // All merchant routes require authentication
