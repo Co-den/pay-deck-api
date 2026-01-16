@@ -31,6 +31,7 @@ const app = express();
 app.use(helmet());
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "http://localhost:3000/api/auth/register",
   "http://localhost:3000/api/auth/login",
   "https://pay-deck-api.onrender.com",
